@@ -1,24 +1,15 @@
-import aiohttp
 import xml.etree.ElementTree as ET
-import asyncio
 
 class Currency:
-    def __init__(self, code, debug=False, amount=1, url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
+    def __init__(self, data, code, amount=1, debug=False):
         self.code = code
         self.debug = debug
         self.amount = amount
-        self.url = url
         self.name = None
-        asyncio.run(self.process_rates())
-
-    async def fetch_rates(self):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as response:
-                return await response.text()
+        self.process_rates(data)
 
 
-    async def process_rates(self):
-        data = await self.fetch_rates()
+    def process_rates(self, data):
         root = ET.fromstring(data)
         currency = None
         for cur in root.findall('.//Valute'):
@@ -33,3 +24,7 @@ class Currency:
         self.value = float(cur.find('Value').text.replace(',', '.'))
         if self.debug:
             return currency.text
+
+    def get_rel_rate(self, another):
+        rel_rate = round(another.value / self.value, 2)
+        return rel_rate, f'{self.code.lower()}-{another.code.lower()}: {rel_rate}'
