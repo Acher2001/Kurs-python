@@ -14,10 +14,11 @@ class BaseCurrency:
         return rel_rate, f'{self.code.lower()}-{another.code.lower()}: {rel_rate}'
 
 class Currency(BaseCurrency):
-    def __init__(self, data, code, amount=1, debug=False):
+    def __init__(self, code, data=None, amount=1, debug=False):
         super().__init__(code=code, amount=amount, debug=debug)
-        self.process_rates(data=data)
-        
+        if data:
+            self.process_rates(data=data)
+
 
 
     def process_rates(self, data):
