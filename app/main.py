@@ -12,7 +12,17 @@ async def fetch_data(url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
 
 async def main():
     """Запускаем сервисы в цикл"""
-    pass
+    global data, valutes
+    old_data = data
+    data = await fetch_data()
+    for cur in valutes[1:]:
+        cur.process_rates(data)
+
 
 if __name__ == '__main__':
+    data = None
+    rub = BaseCurrency(code='RUB', name='Российский рубль')
+    egp = Currency(code='EGP')
+    eur = Currency(code='EUR')
+    valutes = [rub, egp, eur]
     asyncio.run(main())
