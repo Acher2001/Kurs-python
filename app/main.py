@@ -30,6 +30,14 @@ async def main():
         print(display_currencies(valutes))
         await asyncio.sleep(10*60)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Currency exchange rates')
+    parser.add_argument('--rub', type=float, default=1.0, help='Initial amount in RUB')
+    parser.add_argument('--egp', type=float, default=1.0, help='Initial amount in EGP')
+    parser.add_argument('--eur', type=float, default=1.0, help='Initial amount in EUR')
+    parser.add_argument('--period', type=int, default=10, help='Period in minutes')
+    parser.add_argument('--debug', default=False, action='store_true', help='Enable debug mode')
+    return parser.parse_args()
 
 if __name__ == '__main__':
     data = None
