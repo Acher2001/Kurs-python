@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import logging
+import argparse
 
 from currency import Currency, BaseCurrency
 
@@ -21,11 +22,13 @@ def display_currencies(valutes):
 async def main():
     """Запускаем сервисы в цикл"""
     global data, valutes
-    old_data = data
-    data = await fetch_data()
-    for cur in valutes[1:]:
-        cur.process_rates(data)
-    print(display_currencies(valutes))
+    while True:
+        old_data = data
+        data = await fetch_data()
+        for cur in valutes[1:]:
+            cur.process_rates(data)
+        print(display_currencies(valutes))
+        await asyncio.sleep(10*60)
 
 
 if __name__ == '__main__':
