@@ -5,11 +5,16 @@ import argparse
 
 from currency import Currency, BaseCurrency
 
-async def fetch_data(url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
+async def fetch_data(period, lock, url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
     """Получаем данные о курсе валют в формате xml"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.text()
+    global data
+    while True:
+        await lock.acquire()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                data = await response.text()
+        lock.release()
+        await asyncio.sleep(60*period)
 
 def display_currencies(valutes):
     """Возвращает строку с курсом валют"""
@@ -19,17 +24,33 @@ def display_currencies(valutes):
             result += cur1.get_rel_rate(cur2)[1] + '\n'
     return result
 
-async def main():
-    """Запускаем сервисы в цикл"""
-    global data, valutes, args
-    period = args.period
+async def console(valutes, lock):
+    force = True
+    global data
     while True:
-        old_data = data
-        data = await fetch_data()
+        await lock.acquire()
         for cur in valutes[1:]:
             cur.process_rates(data)
-        print(display_currencies(valutes))
-        await asyncio.sleep(period*60)
+        if any([cur.is_changed() for cur in valutes]) or force:
+            print(display_currencies(valutes))
+        force = False
+        lock.release()
+        await asyncio.sleep(60)
+
+
+async def test():
+    while True:
+        print('works')
+        await asyncio.sleep(2)
+
+async def main():
+    """Запускаем сервисы в цикл"""
+    global valutes, args, data
+    period = args.period
+    data_lock = asyncio.Lock()
+    tasks = [fetch_data(period, data_lock), console(valutes, data_lock)]
+    await asyncio.gather(*tasks)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Currency exchange rates')
@@ -41,8 +62,8 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == '__main__':
-    args = parse_args()
     data = None
+    args = parse_args()
     rub = BaseCurrency(code='RUB', name='Российский рубль', amount=args.rub)
     egp = Currency(code='EGP', amount=args.egp)
     eur = Currency(code='EUR', amount=args.eur)
