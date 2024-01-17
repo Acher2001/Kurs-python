@@ -14,6 +14,13 @@ class BaseCurrency:
         rel_rate = round(another.value / self.value, 2)
         return rel_rate, f'{self.code.lower()}-{another.code.lower()}: {rel_rate}'
 
+    def get_sum(self, another):
+        result = 0
+        for cur in another:
+            result += cur.amount * self.get_rel_rate(cur)[0]
+        result += self.amount
+        return result
+
     def is_changed(self):
         if self.amount != self.old_amount:
             self.old_amount = self.amount
