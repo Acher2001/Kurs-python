@@ -16,6 +16,7 @@ class BaseCurrency:
 
     def is_changed(self):
         if self.amount != self.old_amount:
+            self.old_amount = self.amount
             return True
         return False
 
@@ -52,4 +53,5 @@ class Currency(BaseCurrency):
     def is_changed(self):
         amount_changed = super().is_changed()
         value_changed = True if self.value != self.old_value else False
+        self.old_value = self.value
         return amount_changed or value_changed
