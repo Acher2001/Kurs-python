@@ -21,14 +21,15 @@ def display_currencies(valutes):
 
 async def main():
     """Запускаем сервисы в цикл"""
-    global data, valutes
+    global data, valutes, args
+    period = args.period
     while True:
         old_data = data
         data = await fetch_data()
         for cur in valutes[1:]:
             cur.process_rates(data)
         print(display_currencies(valutes))
-        await asyncio.sleep(10*60)
+        await asyncio.sleep(period*60)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Currency exchange rates')
@@ -40,9 +41,10 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == '__main__':
+    args = parse_args()
     data = None
-    rub = BaseCurrency(code='RUB', name='Российский рубль')
-    egp = Currency(code='EGP')
-    eur = Currency(code='EUR')
+    rub = BaseCurrency(code='RUB', name='Российский рубль', amount=args.rub)
+    egp = Currency(code='EGP', amount=args.egp)
+    eur = Currency(code='EUR', amount=args.eur)
     valutes = [rub, egp, eur]
     asyncio.run(main())
