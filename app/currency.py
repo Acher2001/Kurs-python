@@ -8,14 +8,25 @@ class BaseCurrency:
         self.amount = amount
         self.name = name
         self.value = 1
+        self.old_amount = self.amount
 
     def get_rel_rate(self, another):
         rel_rate = round(another.value / self.value, 2)
         return rel_rate, f'{self.code.lower()}-{another.code.lower()}: {rel_rate}'
 
+    def is_changed(self):
+        if self.amount != self.old_amount:
+            return True
+        return False
+
+    def set_amount(self, amount):
+        self.old_amount = self.amount
+        self.amount = amount
+
 class Currency(BaseCurrency):
     def __init__(self, code, data=None, amount=1, debug=False):
         super().__init__(code=code, amount=amount, debug=debug)
+        self.old_value = self.value
         if data:
             self.process_rates(data=data)
 
@@ -33,6 +44,12 @@ class Currency(BaseCurrency):
             raise ValueError('Неверный код валюты')
         if not self.name:
             self.name = cur.find('Name').text
+        self.old_value = self.value
         self.value = float(cur.find('Value').text.replace(',', '.'))
         if self.debug:
             return currency.text
+
+    def is_changed(self):
+        amount_changed = super().is_changed()
+        value_changed = True if self.value != self.old_value else False
+        return amount_changed or value_changed
