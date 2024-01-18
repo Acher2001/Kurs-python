@@ -3,7 +3,7 @@ import asyncio
 import logging
 import argparse
 
-from currency import Currency, BaseCurrency
+from currency import Currency, BaseCurrency, display_currencies
 
 async def fetch_data(period, lock, url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
     """Получаем данные о курсе валют в формате xml"""
@@ -15,23 +15,6 @@ async def fetch_data(period, lock, url='https://www.cbr-xml-daily.ru/daily_utf8.
                 data = await response.text()
         lock.release()
         await asyncio.sleep(60*period)
-
-def display_currencies(valutes):
-    """Возвращает строку с курсом валют"""
-    result = ''
-    for cur in valutes:
-        result += f'{cur.code}: {cur.amount}\n'
-    result += '\n'
-    for i, cur1 in enumerate(valutes[:-1]):
-        for cur2 in valutes[i+1:]:
-            result += cur1.get_rel_rate(cur2)[1] + '\n'
-    result += '\n'
-    sums = []
-    for i, cur in enumerate(valutes):
-        another = valutes[:i] + valutes[i+1:]
-        sums.append(f'{round(cur.get_sum(another),2)}: {cur.code.lower()}')
-    result += 'sum: ' + ' / '.join(sums)
-    return result
 
 async def console(valutes, lock):
     force = True

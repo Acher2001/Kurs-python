@@ -62,3 +62,20 @@ class Currency(BaseCurrency):
         value_changed = True if self.value != self.old_value else False
         self.old_value = self.value
         return amount_changed or value_changed
+
+def display_currencies(valutes):
+    """Возвращает строку с курсом валют"""
+    result = ''
+    for cur in valutes:
+        result += f'{cur.code}: {cur.amount}\n'
+    result += '\n'
+    for i, cur1 in enumerate(valutes[:-1]):
+        for cur2 in valutes[i+1:]:
+            result += cur1.get_rel_rate(cur2)[1] + '\n'
+    result += '\n'
+    sums = []
+    for i, cur in enumerate(valutes):
+        another = valutes[:i] + valutes[i+1:]
+        sums.append(f'{round(cur.get_sum(another),2)}: {cur.code.lower()}')
+    result += 'sum: ' + ' / '.join(sums)
+    return result
