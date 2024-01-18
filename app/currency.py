@@ -76,6 +76,6 @@ def display_currencies(valutes):
     sums = []
     for i, cur in enumerate(valutes):
         another = valutes[:i] + valutes[i+1:]
-        sums.append(f'{round(cur.get_sum(another),2)}: {cur.code.lower()}')
+        sums.append(f'{round(cur.get_sum(another),2)} {cur.code.lower()}')
     result += 'sum: ' + ' / '.join(sums)
     return result
