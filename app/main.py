@@ -8,20 +8,25 @@ from currency import Currency, BaseCurrency, display_currencies
 
 #----------API modules------------------------
 async def web_get_currency(request):
-    global valutes
-    for cur in valutes:
-        if cur.code.lower() == request.match_info.get('name'):
-            currency = cur
-            break
+    global valutes, valutes_dict
+    if request.match_info.get('name').upper() in valutes_dict:
+        cur = valutes_dict[request.match_info.get('name').upper()]
+    else:
+        return web.Response(body='unknown currency code')
     if cur.code == 'RUB':
         return web.Response(body=f'rub: {cur.amount}')
     else:
         return web.Response(body=f'{cur.code.lower()}: {cur.amount}\n{valutes[0].get_rel_rate(cur)[1]}')
 
+async def web_get_amount(request):
+    global valutes
+    return web.Response(body=display_currencies(valutes))
+
 async def init_app():
     app = web.Application()
     app.router.add_routes([
-        web.get('/{name}/get', web_get_currency)
+        web.get('/amount/get', web_get_amount),
+        web.get('/{name}/get', web_get_currency),
     ])
     runner = web.AppRunner(app)
     await runner.setup()
@@ -84,4 +89,5 @@ if __name__ == '__main__':
     egp = Currency(code='EGP', amount=args.egp)
     eur = Currency(code='EUR', amount=args.eur)
     valutes = [rub, egp, eur]
+    valutes_dict = {'RUB':rub, 'EGP':egp, 'EUR':eur}
     asyncio.run(main())
