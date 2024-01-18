@@ -27,14 +27,14 @@ async def web_set_amount(request):
     data = await request.json()
     for key in data:
         if key.upper() in valutes_dict:
-            valutes_dict[key.upper()].amount.set(data[key])
+            valutes_dict[key.upper()].set_amount(data[key])
 
 async def web_modify(request):
     global valutes_dict
     data = await request.json()
     for key, val in data.items():
         if key.upper() in valutes_dict:
-            valutes_dict[key.upper()].amount.set(valutes_dict[key.upper()].amount + val)
+            valutes_dict[key.upper()].set_amount(valutes_dict[key.upper()].amount + val)
 
 
 async def init_app():
