@@ -22,11 +22,20 @@ async def web_get_amount(request):
     global valutes
     return web.Response(body=display_currencies(valutes))
 
+async def web_set_amount(request):
+    global valutes_dict
+    data = await request.json()
+    for key in data:
+        if key.upper() in valutes_dict:
+            valutes_dict[key.upper()].amount = data[key]
+
+
 async def init_app():
     app = web.Application()
     app.router.add_routes([
         web.get('/amount/get', web_get_amount),
         web.get('/{name}/get', web_get_currency),
+        web.post('/amount/set', web_set_amount),
     ])
     runner = web.AppRunner(app)
     await runner.setup()
@@ -46,6 +55,7 @@ async def fetch_data(period, lock, url='https://www.cbr-xml-daily.ru/daily_utf8.
         await asyncio.sleep(60*period)
 
 async def console(valutes, lock):
+    """Асинхронный поток для вывода данных в консоль"""
     force = True
     global data
     while True:
