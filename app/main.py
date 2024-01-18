@@ -29,6 +29,13 @@ async def web_set_amount(request):
         if key.upper() in valutes_dict:
             valutes_dict[key.upper()].amount = data[key]
 
+async def web_modify(request):
+    global valutes_dict
+    data = await request.json()
+    for key, val in data.items():
+        if key.upper() in valutes_dict:
+            valutes_dict[key.upper()].amount += val
+
 
 async def init_app():
     app = web.Application()
@@ -36,6 +43,7 @@ async def init_app():
         web.get('/amount/get', web_get_amount),
         web.get('/{name}/get', web_get_currency),
         web.post('/amount/set', web_set_amount),
+        web.post('/modify', web_modify),
     ])
     runner = web.AppRunner(app)
     await runner.setup()
