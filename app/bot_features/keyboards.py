@@ -6,11 +6,11 @@ kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='Текущий бала
                                     [KeyboardButton(text='Текущий курс')],
                                     [KeyboardButton(text='Изменить баланс')]])
 
-def get_inline_kb_get(codes):
+def get_inline_kb(codes, method):
     buttons = []
     for code in codes:
         buttons.append(InlineKeyboardButton(
             text=code,
-            callback_data=f'get_{code.lower()}'
+            callback_data=f'{method}_{code.lower()}'
         ))
     return InlineKeyboardMarkup(inline_keyboard=[buttons])
