@@ -3,7 +3,11 @@ import asyncio
 import logging
 import argparse
 from aiohttp import web
+from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from aiogram.types import Message
 
+from config import load_config
 from currency import Currency, BaseCurrency, display_currencies
 
 #----------API modules------------------------
@@ -51,6 +55,29 @@ async def init_app():
     await site.start()
 #--------------------------------------------
 
+#-----------Telegram bot---------------------
+def config_bot():
+    config = load_config()
+    bot = Bot(config.bot.token)
+    dp = Dispatcher()
+    return bot, dp
+
+
+bot, dp = config_bot()
+
+@dp.message(Command(commands=["start"]))
+async def process_start_command(message: Message):
+    await message.answer('Привет!\nЭтот бот создан для того, чтобы сообщать о текущих курсах валют\nОтпарвь команду /help, чтобы узнать что он может.')
+
+@dp.message(Command(commands=['help']))
+async def process_help_command(message: Message):
+    await message.answer(
+        'Напиши мне что-нибудь и в ответ '
+        'я пришлю тебе твое сообщение'
+    )
+#--------------------------------------------
+
+
 async def fetch_data(period, lock, url='https://www.cbr-xml-daily.ru/daily_utf8.xml'):
     """Получаем данные о курсе валют в формате xml"""
     global data
@@ -87,7 +114,7 @@ async def main():
     global valutes, args, data
     period = args.period
     data_lock = asyncio.Lock()
-    tasks = [fetch_data(period, data_lock), console(valutes, data_lock), init_app()]
+    tasks = [dp.start_polling(bot), fetch_data(period, data_lock), console(valutes, data_lock), init_app()]
     await asyncio.gather(*tasks)
 
 
