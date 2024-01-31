@@ -5,11 +5,13 @@ import argparse
 from aiohttp import web
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from config import load_config
 from currency import Currency, BaseCurrency, display_currencies
-from bot_features.keyboards import kb, get_inline_kb_get
+from bot_features.keyboards import kb, get_inline_kb
+
+CODES = ['RUB', 'EGP', 'EUR']
 
 #----------API modules------------------------
 async def web_get_currency(request):
@@ -88,7 +90,18 @@ async def process_get_amount(message:Message):
 async def process_get_amount(message:Message):
     global valutes
     await message.answer(text='Курс какой валюты вы хотите узнать?',
-                         reply_markup=get_inline_kb_get([v.code for v in valutes]))
+                         reply_markup=get_inline_kb([v.code for v in valutes], 'get'))
+
+@dp.callback_query(F.data.in_([f'get_{code.lower()}' for code in CODES]))
+async def process_get_cur(callback:CallbackQuery):
+    await callback.answer()
+    code = callback.data[4:].upper()
+    cur = valutes_dict[code]
+    if cur.code == 'RUB':
+        await callback.message.answer(text=f'rub: {cur.amount}')
+    else:
+        await callback.message.answer(text=f'{cur.code.lower()}: {cur.amount}\n{valutes[0].get_rel_rate(cur)[1]}')
+
 #--------------------------------------------
 
 
