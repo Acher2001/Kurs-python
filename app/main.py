@@ -4,14 +4,18 @@ import logging
 import argparse
 from aiohttp import web
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import default_state, State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import load_config
 from currency import Currency, BaseCurrency, display_currencies
 from bot_features.keyboards import kb, get_inline_kb
 
 CODES = ['RUB', 'EGP', 'EUR']
+curr_code = None
 
 #----------API modules------------------------
 async def web_get_currency(request):
@@ -62,9 +66,16 @@ async def init_app():
 def config_bot():
     config = load_config()
     bot = Bot(config.bot.token)
-    dp = Dispatcher()
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
     return bot, dp
 
+class FSMPutData(StatesGroup):
+    get_method = State()
+    set_val = State()
+    modify_val = State()
+    set_amount = State()
+    modify_amount = State()
 
 bot, dp = config_bot()
 
@@ -90,7 +101,7 @@ async def process_get_amount(message:Message):
 async def process_get_amount(message:Message):
     global valutes
     await message.answer(text='Курс какой валюты вы хотите узнать?',
-                         reply_markup=get_inline_kb([v.code for v in valutes], 'get'))
+                         reply_markup=get_inline_kb(CODES, 'get'))
 
 @dp.callback_query(F.data.in_([f'get_{code.lower()}' for code in CODES]))
 async def process_get_cur(callback:CallbackQuery):
@@ -102,6 +113,72 @@ async def process_get_cur(callback:CallbackQuery):
     else:
         await callback.message.answer(text=f'{cur.code.lower()}: {cur.amount}\n{valutes[0].get_rel_rate(cur)[1]}')
 
+@dp.callback_query(F.data == 'post_cancel', ~StateFilter(default_state))
+async def process_cancel(callback:CallbackQuery, state:FSMContext):
+    global curr_code
+    await callback.message.delete()
+    curr_code = None
+    await state.set_state(default_state)
+
+@dp.message(F.text == 'Изменить баланс', StateFilter(default_state))
+async def process_post_req(message:Message, state:FSMContext):
+    await message.answer(text='Выберите способ изменения',
+                         reply_markup=get_inline_kb(['Добавить', 'Обновить'], method='post'))
+    await state.set_state(FSMPutData.get_method)
+
+@dp.callback_query(F.data == 'post_добавить', StateFilter(FSMPutData.get_method))
+async def process_post_modify(callback:CallbackQuery, state:FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(text='Выберите изменяемую валюту',
+                                  reply_markup=get_inline_kb(CODES, 'post'))
+    await state.set_state(FSMPutData.modify_val)
+
+@dp.callback_query(F.data == 'post_обновить', StateFilter(FSMPutData.get_method))
+async def process_post_set(callback:CallbackQuery, state:FSMContext):
+    await callback.answer()
+    await callback.message.edit_text(text='Выберите изменяемую валюту',
+                                  reply_markup=get_inline_kb(CODES, 'post'))
+    await state.set_state(FSMPutData.set_val)
+
+@dp.callback_query(F.data.in_([f'post_{code.lower()}' for code in CODES]), StateFilter(FSMPutData.modify_val))
+async def process_post_modify_val(callback:CallbackQuery, state:FSMContext):
+    global curr_code
+    code = callback.data[5:]
+    curr_code = code.upper()
+    await callback.message.edit_text(text=f'Введите добавляемое к {code} число',
+                                     reply_markup=get_inline_kb([], 'post'))
+    await state.set_state(FSMPutData.modify_amount)
+
+@dp.callback_query(F.data.in_([f'post_{code.lower()}' for code in CODES]), StateFilter(FSMPutData.set_val))
+async def process_post_set_val(callback:CallbackQuery, state:FSMContext):
+    global curr_code
+    code = callback.data[5:]
+    curr_code = code.upper()
+    await callback.message.edit_text(text=f'Введите новое значение {code}',
+                                     reply_markup=get_inline_kb([], 'post'))
+    await state.set_state(FSMPutData.set_amount)
+
+@dp.message(StateFilter(FSMPutData.modify_amount), F.text.isdigit())
+async def process_post_modify_amount(message:Message, state:FSMContext):
+    global valutes_dict, curr_code
+    amount = int(message.text)
+    valutes_dict[curr_code].set_amount(valutes_dict[curr_code].amount+amount)
+    await message.answer(text='Успешно')
+    await state.set_state(default_state)
+    curr_code = None
+
+@dp.message(StateFilter(FSMPutData.set_amount), F.text.isdigit())
+async def process_post_modify_amount(message:Message, state:FSMContext):
+    global valutes_dict, curr_code
+    amount = int(message.text)
+    valutes_dict[curr_code].set_amount(amount)
+    await message.answer(text='Успешно')
+    await state.set_state(default_state)
+    curr_code = None
+
+@dp.message(StateFilter(FSMPutData.set_amount, FSMPutData.modify_amount))
+async def process_post_not_digit(message:Message):
+    await message.answer('Пожалуйста введите число')
 #--------------------------------------------
 
 
