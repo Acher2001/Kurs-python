@@ -9,7 +9,7 @@ from aiogram.types import Message
 
 from config import load_config
 from currency import Currency, BaseCurrency, display_currencies
-from bot_features.keyboards import kb
+from bot_features.keyboards import kb, get_inline_kb_get
 
 #----------API modules------------------------
 async def web_get_currency(request):
@@ -83,6 +83,12 @@ async def process_help_command(message: Message):
 async def process_get_amount(message:Message):
     global valutes
     await message.answer(display_currencies(valutes))
+
+@dp.message(F.text == 'Текущий курс')
+async def process_get_amount(message:Message):
+    global valutes
+    await message.answer(text='Курс какой валюты вы хотите узнать?',
+                         reply_markup=get_inline_kb_get([v.code for v in valutes]))
 #--------------------------------------------
 
 
