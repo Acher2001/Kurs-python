@@ -3,12 +3,13 @@ import asyncio
 import logging
 import argparse
 from aiohttp import web
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from config import load_config
 from currency import Currency, BaseCurrency, display_currencies
+from bot_features.keyboards import kb
 
 #----------API modules------------------------
 async def web_get_currency(request):
@@ -67,7 +68,9 @@ bot, dp = config_bot()
 
 @dp.message(Command(commands=["start"]))
 async def process_start_command(message: Message):
-    await message.answer('Привет!\nЭтот бот создан для того, чтобы сообщать о текущих курсах валют\nОтпарвь команду /help, чтобы узнать что он может.')
+    await message.answer(text='Привет!\nЭтот бот создан для того, чтобы сообщать о текущих курсах валют\nОтпарвь команду /help, чтобы узнать что он может.',
+                         reply_markup=kb)
+
 
 @dp.message(Command(commands=['help']))
 async def process_help_command(message: Message):
@@ -75,6 +78,11 @@ async def process_help_command(message: Message):
         'Напиши мне что-нибудь и в ответ '
         'я пришлю тебе твое сообщение'
     )
+
+@dp.message(F.text == 'Текущий баланс')
+async def process_get_amount(message:Message):
+    global valutes
+    await message.answer(display_currencies(valutes))
 #--------------------------------------------
 
 
