@@ -81,16 +81,10 @@ bot, dp = config_bot()
 
 @dp.message(Command(commands=["start"]))
 async def process_start_command(message: Message):
-    await message.answer(text='Привет!\nЭтот бот создан для того, чтобы сообщать о текущих курсах валют\nОтпарвь команду /help, чтобы узнать что он может.',
+    await message.answer(text='Привет!\nЭтот бот создан для того, чтобы сообщать о текущих курсах валют.',
                          reply_markup=kb)
 
 
-@dp.message(Command(commands=['help']))
-async def process_help_command(message: Message):
-    await message.answer(
-        'Напиши мне что-нибудь и в ответ '
-        'я пришлю тебе твое сообщение'
-    )
 
 @dp.message(F.text == 'Текущий баланс')
 async def process_get_amount(message:Message):
